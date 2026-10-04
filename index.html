@@ -108,24 +108,37 @@
         }
         .btn-edit:hover { background: var(--info); color: #fff; }
 
-        /* Анимация пульсации для машины в работе */
+        /* Анимации и подсветка статусов карточек */
         @keyframes pulseWork {
             0% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.4); }
             70% { box-shadow: 0 0 0 6px rgba(0, 242, 254, 0); }
             100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
         }
-        .bumpix-booking-card.in-progress {
-            border-color: var(--accent) !important;
+
+        .bumpix-booking-card {
+            position: absolute; top: 2px; left: 2px; right: 2px;
+            background: #181f2c; border: 1px solid var(--border-color); border-radius: 6px;
+            padding: 4px; font-size: 9px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; justify-content: space-between;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        
+        /* Стили по статусам */
+        .bumpix-booking-card.status-waiting {
+            border-left: 3px solid var(--warning);
+        }
+        .bumpix-booking-card.status-in_progress {
+            border-left: 3px solid var(--accent);
+            background: rgba(0, 242, 254, 0.05);
             animation: pulseWork 2s infinite;
         }
-        .status-dot {
-            width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: var(--text-muted);
+        .bumpix-booking-card.status-ready {
+            border-left: 3px solid var(--success);
+            background: rgba(16, 185, 129, 0.05);
+            opacity: 0.9;
         }
-        .status-dot.active {
-            background: var(--accent);
-            box-shadow: 0 0 8px var(--accent);
-            animation: pulseWork 1.5s infinite;
-        }
+
+        .bumpix-card-actions { display: flex; gap: 2px; margin-top: 4px; }
 
         .bumpix-week-container {
             background: var(--bg-card); border: 1px solid var(--border-color);
@@ -170,17 +183,6 @@
         .bumpix-slot-cell { border-right: 1px solid var(--border-color); position: relative; cursor: pointer; transition: background 0.2s ease; }
         .bumpix-slot-cell:hover { background: var(--bg-hover); }
 
-        .bumpix-booking-card {
-            position: absolute; top: 2px; left: 2px; right: 2px;
-            background: #181f2c; border: 1px solid var(--border-color); border-radius: 6px;
-            padding: 4px; font-size: 9px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            border-left: 2px solid var(--accent); display: flex; flex-direction: column; justify-content: space-between;
-            cursor: pointer;
-            transition: transform 0.15s ease;
-        }
-        .bumpix-booking-card:hover { border-color: var(--accent); }
-        .bumpix-card-actions { display: flex; gap: 2px; margin-top: 4px; }
-
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(8, 11, 16, 0.85); backdrop-filter: blur(6px);
@@ -203,11 +205,7 @@
         .service-category-title { background: rgba(255,255,255,0.03); padding: 6px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--border-color); }
         .service-items-box { padding: 6px 10px; }
         .bumpix-service-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(38, 45, 61, 0.5); font-size: 12px; gap: 8px; }
-        
-        .contact-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 12px;
-        }
+        .contact-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
     </style>
 </head>
 <body>
@@ -237,16 +235,16 @@
     </div>
 </div>
 
-<!-- Модальное окно записи -->
+<!-- Модальное окно записи / редактирования -->
 <div id="bookingModal" class="modal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="margin-top:0; font-size: 16px; font-weight: 700; margin-bottom: 14px;">Новая запись</h3>
+        <h3 id="modalTitle" style="margin-top:0; font-size: 16px; font-weight: 700; margin-bottom: 14px;">Запись</h3>
         <form id="bookingForm">
             <input type="hidden" id="editId">
             
             <div style="display: flex; gap: 8px;">
                 <div class="form-group" style="flex:1;">
-                    <label>Дата (перенос)</label>
+                    <label>Дата</label>
                     <input type="date" id="formDate" required>
                 </div>
                 <div class="form-group" style="flex:1;">
@@ -267,8 +265,17 @@
             </div>
 
             <div class="form-group">
-                <label>Услуги (можно выбрать несколько):</label>
-                <div id="servicesCheckboxesContainer" style="max-height: 150px; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px;"></div>
+                <label>Статус</label>
+                <select id="formStatus" required>
+                    <option value="waiting">⏳ Ожидание</option>
+                    <option value="in_progress">⚙️ В работе</option>
+                    <option value="ready">✅ Готово</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Услуги (выберите количество для каждой):</label>
+                <div id="servicesQtyContainer" style="max-height: 160px; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px;"></div>
             </div>
 
             <div id="timeRangeIndicator" style="background: rgba(0, 242, 254, 0.03); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px;">
@@ -277,7 +284,7 @@
                     <strong id="timeRangeDisplay" style="color: var(--accent);">09:00 — 11:00 (2 ч.)</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Цена:</span>
+                    <span style="color: var(--text-muted);">Итого цена:</span>
                     <strong id="totalPriceDisplay" style="color: var(--success);">0 ₽</strong>
                 </div>
             </div>
@@ -385,7 +392,6 @@
 
     let services = JSON.parse(localStorage.getItem('wrap_services')) || defaultServices;
     let bookings = {}; 
-    let allBookingsList = []; // для контактов и быстрого доступа
     let currentWeekDate = new Date();
 
     const categories = ["Тонировка", "Атермалка", "Хамелеон", "Бронь"];
@@ -420,7 +426,6 @@
         }
 
         bookings = {};
-        allBookingsList = data || [];
         if (data) {
             data.forEach(item => {
                 if (!bookings[item.date]) bookings[item.date] = [];
@@ -430,7 +435,8 @@
                     time: item.time,
                     timeRange: item.time_range,
                     durationNum: item.duration_num,
-                    services: item.services,
+                    services: item.services, // Массив объектов {name, price, qty, duration} или строк
+                    status: item.status || 'waiting',
                     name: item.client_name,
                     phone: item.phone,
                     car: item.car
@@ -439,20 +445,6 @@
         }
 
         renderBumpixWeekCalendar();
-    }
-
-    // Проверка находится ли машина в работе прямо сейчас
-    function checkCarInProgress(bookingDate, timeStr, durationNum) {
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        if (bookingDate !== todayStr) return false;
-        
-        const [h, m] = timeStr.split(':').map(Number);
-        const startMinutes = h * 60 + m;
-        const endMinutes = startMinutes + (durationNum || 2) * 60;
-        
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-        return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
     }
 
     function checkDayHalves(dayBookings) {
@@ -518,14 +510,16 @@
                         if (b.time === hour) {
                             let durationHours = b.durationNum || 2;
                             let cardHeight = (durationHours * 60) - 4;
-                            let isInProgress = checkCarInProgress(dateStr, b.time, durationHours);
+                            let statusClass = `status-${b.status || 'waiting'}`;
                             
                             bodyHtml += `
-                                <div class="bumpix-booking-card ${isInProgress ? 'in-progress' : ''}" style="height: ${cardHeight}px; z-index: ${Math.round(durationHours * 10)};" onclick="openEditModal('${b.id}')">
+                                <div class="bumpix-booking-card ${statusClass}" style="height: ${cardHeight}px; z-index: ${Math.round(durationHours * 10)};" onclick="openEditModal('${b.id}')">
                                     <div>
                                         <div style="display:flex; justify-content:space-between; align-items:center;">
                                             <span style="font-weight:700; color:var(--accent); font-size:8px;">${b.timeRange || b.time}</span>
-                                            <span class="status-dot ${isInProgress ? 'active' : ''}" title="${isInProgress ? 'Машина в работе' : 'Ожидание'}"></span>
+                                            <span style="font-size:8px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">
+                                                ${b.status === 'in_progress' ? '⚙️ В работе' : (b.status === 'ready' ? '✅ Готово' : '⏳ Ожидание')}
+                                            </span>
                                         </div>
                                         <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.name}</div>
                                         <div style="color:var(--text-muted); font-size:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.car}</div>
@@ -556,8 +550,9 @@
         fetchBookings();
     }
 
-    function updateServicesCheckboxes(selectedNames = []) {
-        const container = document.getElementById('servicesCheckboxesContainer');
+    // Инициализация чекбоксов с количеством (можно выбирать одну услугу несколько раз)
+    function updateServicesQtyContainer(selectedServicesMap = {}) {
+        const container = document.getElementById('servicesQtyContainer');
         container.innerHTML = '';
 
         categories.forEach(cat => {
@@ -572,12 +567,21 @@
             itemsBox.className = 'service-items-box';
 
             catServices.forEach(s => {
-                let isChecked = selectedNames.includes(s.name);
+                let currentQty = selectedServicesMap[s.name] || 0;
                 itemsBox.innerHTML += `
-                    <label style="display:flex; align-items:center; gap:8px; font-size:11px; margin-bottom:4px; cursor:pointer; text-transform:none;">
-                        <input type="checkbox" name="bookingService" value="${s.name}" data-price="${s.price}" data-duration="${s.durationNum || 2}" ${isChecked ? 'checked' : ''} onchange="calculateEndTime()" style="width:auto; cursor:pointer;">
-                        <span>${s.name} — ${s.price.toLocaleString()} ₽</span>
-                    </label>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px;">
+                        <span>${s.name} (${s.price.toLocaleString()} ₽)</span>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:10px; color:var(--text-muted);">${s.durationNum || 2}ч</span>
+                            <input type="number" min="0" max="10" value="${currentQty}" 
+                                data-name="${s.name}" 
+                                data-price="${s.price}" 
+                                data-duration="${s.durationNum || 2}" 
+                                class="service-qty-input" 
+                                style="width: 50px; padding: 4px; text-align: center;" 
+                                onchange="calculateEndTime()">
+                        </div>
+                    </div>
                 `;
             });
             catBlock.appendChild(itemsBox);
@@ -588,13 +592,17 @@
 
     function calculateEndTime() {
         const timeSelect = document.getElementById('formTime');
-        const checkboxes = document.querySelectorAll('input[name="bookingService"]:checked');
+        const qtyInputs = document.querySelectorAll('.service-qty-input');
         let totalDuration = 0, totalPrice = 0;
 
-        checkboxes.forEach(cb => {
-            totalDuration += parseFloat(cb.getAttribute('data-duration')) || 0;
-            totalPrice += parseFloat(cb.getAttribute('data-price')) || 0;
+        qtyInputs.forEach(input => {
+            let qty = parseInt(input.value) || 0;
+            if (qty > 0) {
+                totalDuration += (parseFloat(input.getAttribute('data-duration')) || 0) * qty;
+                totalPrice += (parseFloat(input.getAttribute('data-price')) || 0) * qty;
+            }
         });
+
         if (totalDuration === 0) totalDuration = 2;
 
         let [h, m] = timeSelect.value.split(':').map(Number);
@@ -611,12 +619,13 @@
         document.getElementById('editId').value = '';
         document.getElementById('formDate').value = dateStr;
         document.getElementById('formTime').value = timeStr;
-        updateServicesCheckboxes([]);
+        document.getElementById('formStatus').value = 'waiting';
+        updateServicesQtyContainer({});
         openModal('bookingModal');
     }
 
     function openEditModal(id) {
-        document.getElementById('modalTitle').innerText = 'Редактировать / Перенести';
+        document.getElementById('modalTitle').innerText = 'Редактировать запись';
         let foundBooking = null;
         for (let date in bookings) {
             let match = bookings[date].find(b => b.id === id);
@@ -627,24 +636,36 @@
         document.getElementById('editId').value = foundBooking.id;
         document.getElementById('formDate').value = foundBooking.date;
         document.getElementById('formTime').value = foundBooking.time;
+        document.getElementById('formStatus').value = foundBooking.status || 'waiting';
         document.getElementById('formName').value = foundBooking.name;
         document.getElementById('formPhone').value = foundBooking.phone;
         document.getElementById('formCar').value = foundBooking.car;
 
-        updateServicesCheckboxes(foundBooking.services || []);
+        // Превращаем массив сохраненных услуг обратно в карту количества
+        let servicesMap = {};
+        if (Array.isArray(foundBooking.services)) {
+            foundBooking.services.forEach(item => {
+                if (typeof item === 'object' && item.name) {
+                    servicesMap[item.name] = item.qty || 1;
+                } else if (typeof item === 'string') {
+                    servicesMap[item] = (servicesMap[item] || 0) + 1;
+                }
+            });
+        }
+
+        updateServicesQtyContainer(servicesMap);
         openModal('bookingModal');
     }
 
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    // Управление контактной книгой
+    // Контакты
     async function openContactsModal() {
         const container = document.getElementById('contactsListContainer');
-        container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Загрузка контактов...</div>';
+        container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Загрузка...</div>';
         openModal('contactsModal');
 
-        // Получаем все уникальные контакты из базы
         const { data, error } = await supabaseClient
             .from('bookings')
             .select('client_name, phone, car, date')
@@ -655,7 +676,6 @@
             return;
         }
 
-        // Фильтруем уникальных клиентов по номеру телефона
         let uniqueMap = new Map();
         (data || []).forEach(item => {
             if (item.phone && !uniqueMap.has(item.phone)) {
@@ -678,7 +698,7 @@
                         <strong>${client.client_name}</strong><br>
                         <span style="color: var(--text-muted); font-size: 10px;">🚗 ${client.car || 'Не указано'}</span>
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
+                    <div>
                         <a href="tel:${client.phone}" class="btn-edit" style="text-decoration: none; padding: 6px 8px;">📞 ${client.phone}</a>
                     </div>
                 </div>
@@ -688,18 +708,27 @@
 
     document.getElementById('bookingForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const checkboxes = document.querySelectorAll('input[name="bookingService"]:checked');
-        if (checkboxes.length === 0) { alert('Выберите хотя бы одну услугу.'); return; }
-
-        let sNames = [];
+        const qtyInputs = document.querySelectorAll('.service-qty-input');
+        let selectedServicesList = [];
         let totalDuration = 0;
-        checkboxes.forEach(cb => {
-            sNames.push(cb.value);
-            totalDuration += parseFloat(cb.getAttribute('data-duration')) || 2;
+
+        qtyInputs.forEach(input => {
+            let qty = parseInt(input.value) || 0;
+            if (qty > 0) {
+                let name = input.getAttribute('data-name');
+                let price = parseFloat(input.getAttribute('data-price')) || 0;
+                let dur = parseFloat(input.getAttribute('data-duration')) || 2;
+                selectedServicesList.push({ name, price, qty, duration: dur });
+                totalDuration += dur * qty;
+            }
         });
+
+        if (selectedServicesList.length === 0) { alert('Выберите хотя бы одну услугу.'); return; }
 
         let dateStr = document.getElementById('formDate').value;
         let timeStr = document.getElementById('formTime').value;
+        let statusStr = document.getElementById('formStatus').value;
+
         let [h, m] = timeStr.split(':').map(Number);
         let endM = h * 60 + m + totalDuration * 60;
         let endHStr = `${String(Math.floor(endM / 60)).padStart(2, '0')}:${String(endM % 60).padStart(2, '0')}`;
@@ -709,7 +738,8 @@
             time: timeStr,
             time_range: `${timeStr} — ${endHStr}`,
             duration_num: totalDuration,
-            services: sNames,
+            services: selectedServicesList,
+            status: statusStr,
             client_name: document.getElementById('formName').value,
             phone: document.getElementById('formPhone').value,
             car: document.getElementById('formCar').value
@@ -730,7 +760,7 @@
     });
 
     async function deleteBooking(id) {
-        if (confirm('Удалить эту запись?')) {
+        if (confirm('Вы уверены, что хотите удалить эту запись?')) {
             let { error } = await supabaseClient.from('bookings').delete().eq('id', id);
             if (error) { alert('Ошибка: ' + error.message); return; }
             fetchBookings();
