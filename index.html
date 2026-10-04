@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WrapStudio — Professional Executive Edition</title>
+    <title>WrapStudio — Professional Executive Edition (Cloud Sync)</title>
+    <!-- Подключаем клиент Supabase для работы с облачной базой -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-main: #0c0e12;
@@ -21,11 +23,7 @@
             --warning: #f59e0b;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -80,366 +78,137 @@
             box-shadow: 0 0 12px var(--accent);
         }
 
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-
+        .header-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         .nav-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--bg-main);
-            padding: 6px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 12px;
+            background: var(--bg-main); padding: 6px 12px;
+            border-radius: 10px; border: 1px solid var(--border-color);
         }
-
-        .nav-label {
-            font-size: 14px;
-            font-weight: 600;
-            padding: 0 8px;
-            min-width: 190px;
-            text-align: center;
-        }
+        .nav-label { font-size: 14px; font-weight: 600; padding: 0 8px; min-width: 190px; text-align: center; }
 
         .btn {
-            background-color: var(--accent);
-            color: #0c0e12;
-            padding: 10px 18px;
-            font-size: 13px;
-            font-weight: 700;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            white-space: nowrap;
+            background-color: var(--accent); color: #0c0e12;
+            padding: 10px 18px; font-size: 13px; font-weight: 700;
+            border: none; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;
         }
-        .btn:hover {
-            background-color: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px var(--accent-glow);
-        }
-        .btn:active { transform: translateY(0); }
-
-        .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-        }
-        .btn-secondary:hover {
-            background: var(--bg-hover);
-            border-color: var(--text-muted);
-            box-shadow: none;
-        }
-
+        .btn:hover { background-color: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
+        .btn-secondary { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--bg-hover); border-color: var(--text-muted); box-shadow: none; }
         .btn-danger {
-            background: rgba(255, 92, 92, 0.1);
-            color: var(--danger);
-            padding: 5px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 92, 92, 0.25);
-            cursor: pointer;
-            transition: all 0.2s ease;
+            background: rgba(255, 92, 92, 0.1); color: var(--danger);
+            padding: 5px 10px; font-size: 11px; font-weight: 600;
+            border-radius: 6px; border: 1px solid rgba(255, 92, 92, 0.25); cursor: pointer;
         }
         .btn-danger:hover { background: var(--danger); color: #fff; }
-
         .btn-edit {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--info);
-            padding: 5px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid rgba(59, 130, 246, 0.25);
-            cursor: pointer;
-            transition: all 0.2s ease;
+            background: rgba(59, 130, 246, 0.1); color: var(--info);
+            padding: 5px 10px; font-size: 11px; font-weight: 600;
+            border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.25); cursor: pointer;
         }
         .btn-edit:hover { background: var(--info); color: #fff; }
 
         /* Сетка календаря */
         .bumpix-week-container {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 12px 36px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 14px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column;
         }
-
         .bumpix-header-row {
-            display: grid;
-            grid-template-columns: 90px repeat(7, minmax(150px, 1fr));
-            border-bottom: 1px solid var(--border-color);
-            background: #10131b;
+            display: grid; grid-template-columns: 90px repeat(7, minmax(150px, 1fr));
+            border-bottom: 1px solid var(--border-color); background: #10131b;
         }
-
-        .bumpix-time-col-header {
-            padding: 16px 8px;
-            text-align: center;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .bumpix-time-col-header, .bumpix-time-cell {
+            padding: 16px 8px; text-align: center; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; color: var(--text-muted); border-right: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: center;
         }
-
         .bumpix-day-header {
-            padding: 14px 10px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 13px;
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            padding: 14px 10px; text-align: center; font-weight: 600; font-size: 13px;
+            border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px;
         }
-        .bumpix-day-header .day-title {
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .bumpix-day-header .day-date {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-        .bumpix-day-header .day-status {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin: 2px auto 0 auto;
-            width: fit-content;
-            font-weight: 600;
-        }
-        .status-badge-free {
-            background: rgba(16, 185, 129, 0.12);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        .status-badge-busy {
-            background: rgba(255, 92, 92, 0.12);
-            color: var(--danger);
-            border: 1px solid rgba(255, 92, 92, 0.3);
-        }
+        .bumpix-day-header .day-title { font-size: 13px; font-weight: 700; }
+        .bumpix-day-header .day-date { font-size: 11px; color: var(--text-muted); }
+        .bumpix-day-header .day-status { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin: 2px auto 0 auto; width: fit-content; font-weight: 600; }
+        .status-badge-free { background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-badge-busy { background: rgba(255, 92, 92, 0.12); color: var(--danger); border: 1px solid rgba(255, 92, 92, 0.3); }
 
-        /* Пульсирующая анимация сегодняшнего дня */
         .bumpix-day-header.today {
-            background: rgba(0, 242, 254, 0.08);
-            border-bottom: 2px solid var(--accent);
-            animation: todayPulse 2.5s infinite ease-in-out;
+            background: rgba(0, 242, 254, 0.08); border-bottom: 2px solid var(--accent);
         }
-        .bumpix-day-header.today .day-title {
-            color: var(--accent);
-        }
+        .bumpix-day-header.today .day-title { color: var(--accent); }
 
-        @keyframes todayPulse {
-            0% { box-shadow: inset 0 0 0 0 rgba(0, 242, 254, 0); }
-            50% { box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.12); }
-            100% { box-shadow: inset 0 0 0 0 rgba(0, 242, 254, 0); }
-        }
-
-        .bumpix-body {
-            position: relative;
-            overflow-y: auto;
-            max-height: 72vh;
-        }
-
-        .bumpix-row {
-            display: grid;
-            grid-template-columns: 90px repeat(7, minmax(150px, 1fr));
-            border-bottom: 1px solid var(--border-color);
-            min-height: 75px;
-        }
-
-        .bumpix-row.lunch-row {
-            background: rgba(255, 92, 92, 0.015);
-        }
+        .bumpix-body { position: relative; overflow-y: auto; max-height: 72vh; }
+        .bumpix-row { display: grid; grid-template-columns: 90px repeat(7, minmax(150px, 1fr)); border-bottom: 1px solid var(--border-color); min-height: 75px; }
+        .bumpix-row.lunch-row { background: rgba(255, 92, 92, 0.015); }
         .bumpix-row.lunch-row .bumpix-slot-cell {
             background: repeating-linear-gradient(45deg, rgba(255, 92, 92, 0.02), rgba(255, 92, 92, 0.02) 10px, rgba(255, 92, 92, 0.05) 10px, rgba(255, 92, 92, 0.05) 20px);
             cursor: not-allowed;
         }
-
-        .bumpix-time-cell {
-            padding: 12px 8px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            border-right: 1px solid var(--border-color);
-            background: rgba(0,0,0,0.2);
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 14px;
-        }
-
-        .bumpix-slot-cell {
-            border-right: 1px solid var(--border-color);
-            position: relative;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-        .bumpix-slot-cell:hover {
-            background: var(--bg-hover);
-        }
+        .bumpix-time-cell { background: rgba(0,0,0,0.2); align-items: flex-start; padding-top: 14px; }
+        .bumpix-slot-cell { border-right: 1px solid var(--border-color); position: relative; cursor: pointer; transition: background 0.2s ease; }
+        .bumpix-slot-cell:hover { background: var(--bg-hover); }
 
         .bumpix-booking-card {
-            position: absolute;
-            top: 4px; left: 5px; right: 5px;
-            background: #181f2c;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 11px;
-            overflow: hidden;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-            border-left: 3px solid var(--accent);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            animation: cardScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: absolute; top: 4px; left: 5px; right: 5px;
+            background: #181f2c; border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 10px; font-size: 11px; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+            border-left: 3px solid var(--accent); display: flex; flex-direction: column; justify-content: space-between;
         }
-        .bumpix-booking-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.6);
-            z-index: 100 !important;
-        }
-
-        @keyframes cardScaleIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .bumpix-card-actions {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-        }
+        .bumpix-card-actions { display: flex; gap: 6px; margin-top: 8px; }
 
         .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(8, 11, 16, 0.8);
-            backdrop-filter: blur(6px);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 20px;
-            box-sizing: border-box;
-            opacity: 0;
-            transition: opacity 0.25s ease;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8, 11, 16, 0.8); backdrop-filter: blur(6px);
+            justify-content: center; align-items: center; z-index: 1000; padding: 20px;
         }
-        .modal.active {
-            display: flex;
-            opacity: 1;
-        }
-
+        .modal.active { display: flex; }
         .modal-content {
-            background: var(--bg-card);
-            padding: 32px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 580px;
-            border: 1px solid var(--border-color);
-            max-height: 90vh;
-            overflow-y: auto;
-            box-sizing: border-box;
-            box-shadow: 0 20px 45px rgba(0,0,0,0.7);
-            transform: scale(0.95);
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            background: var(--bg-card); padding: 32px; border-radius: 16px;
+            width: 100%; max-width: 580px; border: 1px solid var(--border-color);
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 45px rgba(0,0,0,0.7);
         }
-        .modal.active .modal-content {
-            transform: scale(1);
-        }
-
         .form-group { margin-bottom: 18px; }
         label { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
         input, select {
-            width: 100%;
-            padding: 12px 14px;
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 13px;
-            box-sizing: border-box;
-            outline: none;
-            transition: all 0.2s ease;
+            width: 100%; padding: 12px 14px; background: var(--bg-main);
+            border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 13px; outline: none;
         }
-        input:focus, select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 10px var(--accent-glow);
-        }
-
-        .service-category-block {
-            margin-bottom: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-            background: var(--bg-main);
-        }
-        .service-category-title {
-            background: rgba(255,255,255,0.03);
-            padding: 10px 14px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--accent);
-            border-bottom: 1px solid var(--border-color);
-        }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+        .service-category-block { margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: var(--bg-main); }
+        .service-category-title { background: rgba(255,255,255,0.03); padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--border-color); }
         .service-items-box { padding: 10px 14px; }
-
-        .bumpix-service-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(38, 45, 61, 0.5);
-            font-size: 13px;
-        }
-        .bumpix-service-item:last-child { border-bottom: none; }
+        .bumpix-service-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(38, 45, 61, 0.5); font-size: 13px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>WrapStudio Management</h1>
+        <h1>WrapStudio Management (Cloud Sync)</h1>
         <div class="header-actions">
             <button class="btn btn-secondary" onclick="openServicesModal()">⚙ Каталог услуг</button>
             <div class="nav-controls">
                 <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="changeWeek(-1)">←</button>
-                <span id="weekRangeLabel" class="nav-label"></span>
+                <span id="weekRangeLabel" class="nav-label">Загрузка...</span>
                 <button class="btn btn-secondary" style="padding: 6px 12px;" onclick="changeWeek(1)">→</button>
                 <button class="btn" style="padding: 8px 14px; font-size: 12px;" onclick="goToToday()">Сегодня</button>
             </div>
         </div>
     </header>
 
-    <!-- Сетка -->
     <div class="bumpix-week-container">
         <div id="bumpixHeader" class="bumpix-header-row"></div>
         <div id="bumpixBody" class="bumpix-body"></div>
     </div>
 </div>
 
-<!-- Окно записи -->
+<!-- Модальное окно записи -->
 <div id="bookingModal" class="modal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="margin-top:0; font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 22px;">Новая запись</h3>
+        <h3 id="modalTitle" style="margin-top:0; font-size: 18px; font-weight: 700; margin-bottom: 22px;">Новая запись</h3>
         <form id="bookingForm">
-            <input type="hidden" id="editIndex">
+            <input type="hidden" id="editId">
             <input type="hidden" id="targetDate">
             
             <div style="display: flex; gap: 14px;">
@@ -459,7 +228,7 @@
                         <option value="15:00">15:00</option>
                         <option value="16:00">16:00</option>
                         <option value="17:00">17:00</option>
-                        <option value="18:00">18:00 (Конец работы)</option>
+                        <option value="18:00">18:00</option>
                     </select>
                 </div>
             </div>
@@ -504,11 +273,11 @@
     </div>
 </div>
 
-<!-- Окно услуг -->
+<!-- Модальное окно услуг -->
 <div id="servicesModal" class="modal">
     <div class="modal-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 18px; font-weight: 700; color: var(--text-main);">Каталог услуг</h3>
+            <h3 style="margin:0; font-size: 18px; font-weight: 700;">Каталог услуг</h3>
             <button class="btn" style="padding: 8px 14px; font-size: 12px;" onclick="openAddServiceForm()">+ Услуга</button>
         </div>
         <div id="bumpixCategoriesList" style="margin-bottom: 20px; max-height: 380px; overflow-y: auto;"></div>
@@ -521,7 +290,7 @@
 <!-- Редактор услуги -->
 <div id="serviceEditorModal" class="modal" style="z-index: 1010;">
     <div class="modal-content" style="max-width: 420px;">
-        <h3 id="serviceEditorTitle" style="margin-top:0; font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 18px;">Добавить услугу</h3>
+        <h3 style="margin-top:0; font-size: 16px; font-weight: 700; margin-bottom: 18px;">Добавить услугу</h3>
         <form id="addServiceForm">
             <div class="form-group">
                 <label>Категория</label>
@@ -543,8 +312,7 @@
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Часов</label>
-                    <input type="number" step="0.5" id="newServiceDurationNum" required placeholder="2" oninput="syncDurationText()">
-                    <input type="hidden" id="newServiceDuration">
+                    <input type="number" step="0.5" id="newServiceDurationNum" required placeholder="2">
                 </div>
             </div>
             <div style="display: flex; gap: 12px; margin-top: 22px;">
@@ -556,6 +324,12 @@
 </div>
 
 <script>
+    // --- НАСТРОЙКИ SUPABASE (Обновлены) ---
+    const SUPABASE_URL = 'https://owgzxojhutyotirszqoz.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_p_fBVPC_RpIZF7LeLAy-Rw_gkacIzzk';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let defaultServices = [
         { group: "Тонировка", name: "Тонировка стандарт", price: 8000, durationNum: 2, duration: "2 часа" },
         { group: "Атермалка", name: "Атермальная пленка лбом", price: 6000, durationNum: 1.5, duration: "1.5 часа" },
@@ -564,7 +338,7 @@
     ];
 
     let services = JSON.parse(localStorage.getItem('wrap_services')) || defaultServices;
-    let bookings = JSON.parse(localStorage.getItem('wrap_week_bumpix_bookings')) || {};
+    let bookings = {}; 
     let currentWeekDate = new Date();
 
     const categories = ["Тонировка", "Атермалка", "Хамелеон", "Бронь"];
@@ -579,14 +353,50 @@
         return new Date(d.setDate(diff));
     }
 
-    // Проверка занятости половины дня: утро (09:00-13:00) или вечер (14:00-18:00)
+    async function fetchBookings() {
+        let monday = getMonday(currentWeekDate);
+        let sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+
+        let startStr = monday.toISOString().split('T')[0];
+        let endStr = sunday.toISOString().split('T')[0];
+
+        const { data, error } = await supabaseClient
+            .from('bookings')
+            .select('*')
+            .gte('date', startStr)
+            .lte('date', endStr);
+
+        if (error) {
+            console.error('Ошибка загрузки:', error);
+            return;
+        }
+
+        bookings = {};
+        if (data) {
+            data.forEach(item => {
+                if (!bookings[item.date]) bookings[item.date] = [];
+                bookings[item.date].push({
+                    id: item.id,
+                    time: item.time,
+                    timeRange: item.time_range,
+                    durationNum: item.duration_num,
+                    services: item.services,
+                    name: item.client_name,
+                    phone: item.phone,
+                    car: item.car
+                });
+            });
+        }
+
+        renderBumpixWeekCalendar();
+    }
+
     function checkDayHalves(dayBookings) {
         let morningHours = ["09:00", "10:00", "11:00", "12:00"];
         let eveningHours = ["14:00", "15:00", "16:00", "17:00", "18:00"];
-
         let isMorningBusy = morningHours.some(h => dayBookings.some(b => b.time === h));
         let isEveningBusy = eveningHours.some(h => dayBookings.some(b => b.time === h));
-
         return { isMorningBusy, isEveningBusy, isFullyBusy: isMorningBusy && isEveningBusy };
     }
 
@@ -602,7 +412,6 @@
             `${monday.getDate()} ${monthsNames[monday.getMonth()]} — ${sunday.getDate()} ${monthsNames[sunday.getMonth()]} ${sunday.getFullYear()}`;
 
         const todayStr = new Date().toISOString().split('T')[0];
-
         let headerHtml = `<div class="bumpix-time-col-header">Время</div>`;
         let weekDates = [];
 
@@ -615,13 +424,9 @@
             let isToday = (dateStr === todayStr);
             let dayBookings = bookings[dateStr] || [];
             let halves = checkDayHalves(dayBookings);
-            
-            let statusBadge = '';
-            if (!halves.isFullyBusy) {
-                statusBadge = `<div class="day-status status-badge-free">Свободно</div>`;
-            } else {
-                statusBadge = `<div class="day-status status-badge-busy">Занято</div>`;
-            }
+            let statusBadge = !halves.isFullyBusy 
+                ? `<div class="day-status status-badge-free">Свободно</div>` 
+                : `<div class="day-status status-badge-busy">Занято</div>`;
 
             headerHtml += `
                 <div class="bumpix-day-header ${isToday ? 'today' : ''}">
@@ -637,23 +442,18 @@
         hoursRange.forEach(hour => {
             let isLunch = (hour === "13:00");
             bodyHtml += `<div class="bumpix-row ${isLunch ? 'lunch-row' : ''}">`;
-            
-            if (isLunch) {
-                bodyHtml += `<div class="bumpix-time-cell" style="color:var(--danger); font-weight:700;">13:00 ☕</div>`;
-            } else {
-                bodyHtml += `<div class="bumpix-time-cell">${hour}</div>`;
-            }
+            bodyHtml += isLunch ? `<div class="bumpix-time-cell" style="color:var(--danger);">13:00 ☕</div>` : `<div class="bumpix-time-cell">${hour}</div>`;
 
             weekDates.forEach(dateStr => {
                 if (isLunch) {
-                    bodyHtml += `<div class="bumpix-slot-cell" onclick="alert('С 13:00 до 14:00 у мастера обед. Запись в это время невозможна.')" title="Обед (13:00 - 14:00)"></div>`;
+                    bodyHtml += `<div class="bumpix-slot-cell" onclick="alert('Обед (13:00 - 14:00). Запись недоступна.')"></div>`;
                 } else {
                     bodyHtml += `<div class="bumpix-slot-cell" onclick="onSlotClick('${dateStr}', '${hour}')">`;
                     
                     let dayBookings = bookings[dateStr] || [];
-                    dayBookings.forEach((b, bIdx) => {
+                    dayBookings.forEach((b) => {
                         if (b.time === hour) {
-                            let servicesStr = b.services ? b.services.join(', ') : b.service;
+                            let servicesStr = b.services ? b.services.join(', ') : '';
                             let durationHours = b.durationNum || 2;
                             let cardHeight = (durationHours * 75) - 8;
                             
@@ -661,19 +461,18 @@
                                 <div class="bumpix-booking-card" style="height: ${cardHeight}px; z-index: ${Math.round(durationHours * 10)};" onclick="event.stopPropagation()">
                                     <div>
                                         <div style="font-weight:700; color:var(--accent); margin-bottom:3px;">${b.timeRange || b.time}</div>
-                                        <div style="font-weight:700; color:var(--text-main);">${b.name}</div>
+                                        <div style="font-weight:700;">${b.name}</div>
                                         <div style="color:var(--text-muted);">${b.car}</div>
                                         <div style="font-size:10px; color:var(--success); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🛠 ${servicesStr}</div>
                                     </div>
                                     <div class="bumpix-card-actions">
-                                        <button class="btn-edit" onclick="openEditModal('${dateStr}', ${bIdx})">Изменить</button>
-                                        <button class="btn-danger" onclick="deleteBooking('${dateStr}', ${bIdx})">Удалить</button>
+                                        <button class="btn-edit" onclick="openEditModal('${b.id}')">Изменить</button>
+                                        <button class="btn-danger" onclick="deleteBooking('${b.id}')">Удалить</button>
                                     </div>
                                 </div>
                             `;
                         }
                     });
-
                     bodyHtml += `</div>`;
                 }
             });
@@ -684,12 +483,12 @@
 
     function changeWeek(dir) {
         currentWeekDate.setDate(currentWeekDate.getDate() + (dir * 7));
-        renderBumpixWeekCalendar();
+        fetchBookings();
     }
 
     function goToToday() {
         currentWeekDate = new Date();
-        renderBumpixWeekCalendar();
+        fetchBookings();
     }
 
     function updateServicesCheckboxes(selectedNames = []) {
@@ -709,39 +508,23 @@
 
             catServices.forEach(s => {
                 let isChecked = selectedNames.includes(s.name);
-                let label = document.createElement('label');
-                label.style.display = 'flex';
-                label.style.alignItems = 'center';
-                label.style.gap = '10px';
-                label.style.fontSize = '12px';
-                label.style.marginBottom = '6px';
-                label.style.cursor = 'pointer';
-                label.style.color = 'var(--text-main)';
-                label.style.textTransform = 'none';
-                label.innerHTML = `
-                    <input type="checkbox" name="bookingService" value="${s.name}" data-price="${s.price}" data-duration="${s.durationNum || 2}" ${isChecked ? 'checked' : ''} onchange="calculateEndTime()" style="width: auto; cursor: pointer;">
-                    <span>${s.name} — ${s.price.toLocaleString()} ₽ (${s.duration})</span>
+                itemsBox.innerHTML += `
+                    <label style="display:flex; align-items:center; gap:10px; font-size:12px; margin-bottom:6px; cursor:pointer; text-transform:none;">
+                        <input type="checkbox" name="bookingService" value="${s.name}" data-price="${s.price}" data-duration="${s.durationNum || 2}" ${isChecked ? 'checked' : ''} onchange="calculateEndTime()" style="width:auto; cursor:pointer;">
+                        <span>${s.name} — ${s.price.toLocaleString()} ₽ (${s.duration})</span>
+                    </label>
                 `;
-                itemsBox.appendChild(label);
             });
-
             catBlock.appendChild(itemsBox);
             container.appendChild(catBlock);
         });
-
         calculateEndTime();
     }
 
     function calculateEndTime() {
         const timeSelect = document.getElementById('formTime');
-        if (timeSelect.value === '13:00') {
-            alert('Время с 13:00 до 14:00 является обеденным и недоступно для записи.');
-            timeSelect.value = '14:00';
-        }
-
         const checkboxes = document.querySelectorAll('input[name="bookingService"]:checked');
-        let totalDuration = 0;
-        let totalPrice = 0;
+        let totalDuration = 0, totalPrice = 0;
 
         checkboxes.forEach(cb => {
             totalDuration += parseFloat(cb.getAttribute('data-duration')) || 0;
@@ -751,12 +534,6 @@
 
         let [h, m] = timeSelect.value.split(':').map(Number);
         let endM = h * 60 + m + totalDuration * 60;
-        
-        // Проверяем, не выходит ли запись за рамки рабочего дня (18:00)
-        if (endM > 18 * 60) {
-            alert('Внимание: выбранная длительность услуги превышает время окончания работы студии (18:00).');
-        }
-
         let endHStr = `${String(Math.floor(endM / 60)).padStart(2, '0')}:${String(endM % 60).padStart(2, '0')}`;
 
         document.getElementById('timeRangeDisplay').textContent = `${timeSelect.value} — ${endHStr} (${totalDuration} ч.)`;
@@ -764,57 +541,42 @@
     }
 
     function onSlotClick(dateStr, timeStr) {
-        if (timeStr === '13:00') {
-            alert('С 13:00 до 14:00 у мастера обед. Запись в это время невозможна.');
-            return;
-        }
         document.getElementById('modalTitle').innerText = 'Новая запись';
         document.getElementById('bookingForm').reset();
-        document.getElementById('targetDate').value = dateStr;
+        document.getElementById('editId').value = '';
         document.getElementById('formDate').value = dateStr;
         document.getElementById('formTime').value = timeStr;
-        document.getElementById('editIndex').value = '';
         updateServicesCheckboxes([]);
         openModal('bookingModal');
     }
 
-    function openEditModal(dateStr, index) {
+    function openEditModal(id) {
         document.getElementById('modalTitle').innerText = 'Редактировать запись';
-        const b = bookings[dateStr][index];
+        let foundBooking = null;
+        for (let date in bookings) {
+            let match = bookings[date].find(b => b.id === id);
+            if (match) { foundBooking = match; break; }
+        }
+        if (!foundBooking) return;
 
-        document.getElementById('targetDate').value = dateStr;
-        document.getElementById('formDate').value = dateStr;
-        document.getElementById('editIndex').value = index;
-        document.getElementById('formTime').value = b.time;
-        document.getElementById('formName').value = b.name;
-        document.getElementById('formPhone').value = b.phone;
-        document.getElementById('formCar').value = b.car;
+        document.getElementById('editId').value = foundBooking.id;
+        document.getElementById('formDate').value = Object.keys(bookings).find(d => bookings[d].some(b => b.id === id));
+        document.getElementById('formTime').value = foundBooking.time;
+        document.getElementById('formName').value = foundBooking.name;
+        document.getElementById('formPhone').value = foundBooking.phone;
+        document.getElementById('formCar').value = foundBooking.car;
 
-        updateServicesCheckboxes(b.services || [b.service]);
+        updateServicesCheckboxes(foundBooking.services || []);
         openModal('bookingModal');
     }
 
-    function openModal(id) {
-        document.getElementById(id).classList.add('active');
-    }
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('active');
-    }
-
-    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    document.getElementById('bookingForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        let timeStr = document.getElementById('formTime').value;
-        if (timeStr === '13:00') {
-            alert('Ошибка: нельзя записать клиента на обеденное время (13:00 — 14:00).');
-            return;
-        }
-
         const checkboxes = document.querySelectorAll('input[name="bookingService"]:checked');
-        if (checkboxes.length === 0) {
-            alert('Выберите хотя бы одну услугу.');
-            return;
-        }
+        if (checkboxes.length === 0) { alert('Выберите хотя бы одну услугу.'); return; }
 
         let sNames = [];
         let totalDuration = 0;
@@ -824,91 +586,69 @@
         });
 
         let dateStr = document.getElementById('formDate').value;
+        let timeStr = document.getElementById('formTime').value;
         let [h, m] = timeStr.split(':').map(Number);
         let endM = h * 60 + m + totalDuration * 60;
         let endHStr = `${String(Math.floor(endM / 60)).padStart(2, '0')}:${String(endM % 60).padStart(2, '0')}`;
 
         const entry = {
+            date: dateStr,
             time: timeStr,
-            timeRange: `${timeStr} — ${endHStr}`,
-            durationNum: totalDuration,
+            time_range: `${timeStr} — ${endHStr}`,
+            duration_num: totalDuration,
             services: sNames,
-            name: document.getElementById('formName').value,
+            client_name: document.getElementById('formName').value,
             phone: document.getElementById('formPhone').value,
             car: document.getElementById('formCar').value
         };
 
-        let editIdx = document.getElementById('editIndex').value;
-        let oldDate = document.getElementById('targetDate').value;
+        let editId = document.getElementById('editId').value;
 
-        if (editIdx !== '') {
-            bookings[oldDate].splice(editIdx, 1);
+        if (editId) {
+            let { error } = await supabaseClient.from('bookings').update(entry).eq('id', editId);
+            if (error) { alert('Ошибка обновления: ' + error.message); return; }
+        } else {
+            let { error } = await supabaseClient.from('bookings').insert([entry]);
+            if (error) { alert('Ошибка добавления: ' + error.message); return; }
         }
 
-        if (!bookings[dateStr]) bookings[dateStr] = [];
-        bookings[dateStr].push(entry);
-
-        localStorage.setItem('wrap_week_bumpix_bookings', JSON.stringify(bookings));
         closeModal('bookingModal');
-        renderBumpixWeekCalendar();
+        fetchBookings();
     });
 
-    function deleteBooking(dateStr, idx) {
+    async function deleteBooking(id) {
         if (confirm('Удалить запись?')) {
-            bookings[dateStr].splice(idx, 1);
-            if (bookings[dateStr].length === 0) delete bookings[dateStr];
-            localStorage.setItem('wrap_week_bumpix_bookings', JSON.stringify(bookings));
-            renderBumpixWeekCalendar();
+            let { error } = await supabaseClient.from('bookings').delete().eq('id', id);
+            if (error) { alert('Ошибка удаления: ' + error.message); return; }
+            fetchBookings();
         }
     }
 
-    function openServicesModal() {
-        renderBumpixCategories();
-        openModal('servicesModal');
-    }
-
+    function openServicesModal() { renderBumpixCategories(); openModal('servicesModal'); }
     function renderBumpixCategories() {
         const container = document.getElementById('bumpixCategoriesList');
         container.innerHTML = '';
-        
         categories.forEach(cat => {
             let catServices = services.filter(s => s.group === cat);
             let catBlock = document.createElement('div');
             catBlock.className = 'service-category-block';
             catBlock.innerHTML = `<div class="service-category-title">${cat}</div>`;
-            
             let itemsBox = document.createElement('div');
             itemsBox.className = 'service-items-box';
-
-            if (catServices.length === 0) {
-                itemsBox.innerHTML = `<div style="padding: 6px 0; font-size:12px; color:var(--text-muted);">Нет услуг</div>`;
-            } else {
-                catServices.forEach((s) => {
-                    let globalIdx = services.indexOf(s);
-                    itemsBox.innerHTML += `
-                        <div class="bumpix-service-item">
-                            <div><strong style="color:var(--text-main);">${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.price.toLocaleString()} ₽ • ${s.duration}</span></div>
-                            <div><button class="btn-danger" onclick="deleteService(${globalIdx})">Удалить</button></div>
-                        </div>
-                    `;
-                });
-            }
-
+            catServices.forEach((s) => {
+                let idx = services.indexOf(s);
+                itemsBox.innerHTML += `
+                    <div class="bumpix-service-item">
+                        <div><strong>${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.price.toLocaleString()} ₽ • ${s.duration}</span></div>
+                        <button class="btn-danger" onclick="deleteService(${idx})">Удалить</button>
+                    </div>`;
+            });
             catBlock.appendChild(itemsBox);
             container.appendChild(catBlock);
         });
     }
 
-    function openAddServiceForm() {
-        document.getElementById('addServiceForm').reset();
-        openModal('serviceEditorModal');
-    }
-
-    function syncDurationText() {
-        let val = document.getElementById('newServiceDurationNum').value;
-        document.getElementById('newServiceDuration').value = `${val} часа`;
-    }
-
+    function openAddServiceForm() { document.getElementById('addServiceForm').reset(); openModal('serviceEditorModal'); }
     document.getElementById('addServiceForm').addEventListener('submit', function(e) {
         e.preventDefault();
         let dur = parseFloat(document.getElementById('newServiceDurationNum').value) || 2;
@@ -930,7 +670,8 @@
         renderBumpixCategories();
     }
 
-    renderBumpixWeekCalendar();
+    // Запуск при загрузке страницы
+    fetchBookings();
 </script>
 
 </body>
