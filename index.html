@@ -108,22 +108,33 @@
         }
         .btn-edit:hover { background: var(--info); color: #fff; }
 
-        /* Ультракомпактная сетка календаря под экран телефона */
+        /* Анимация пульсации для машины в работе */
+        @keyframes pulseWork {
+            0% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(0, 242, 254, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
+        }
+        .bumpix-booking-card.in-progress {
+            border-color: var(--accent) !important;
+            animation: pulseWork 2s infinite;
+        }
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: var(--text-muted);
+        }
+        .status-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            animation: pulseWork 1.5s infinite;
+        }
+
         .bumpix-week-container {
             background: var(--bg-card); border: 1px solid var(--border-color);
             border-radius: 10px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            display: flex; flex-direction: column;
-            width: 100%;
-            overflow-x: auto; /* Мягкий скролл, если экран совсем узкий, но колонки стали уже */
+            display: flex; flex-direction: column; width: 100%; overflow-x: auto;
         }
         
-        .bumpix-wrapper-inner {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-        }
+        .bumpix-wrapper-inner { width: 100%; display: flex; flex-direction: column; }
 
-        /* 55px для колонки времени + 7 равных колонок дней, занимающих всю ширину */
         .bumpix-header-row {
             display: grid; grid-template-columns: 50px repeat(7, 1fr);
             border-bottom: 1px solid var(--border-color); background: #10131b;
@@ -164,7 +175,10 @@
             background: #181f2c; border: 1px solid var(--border-color); border-radius: 6px;
             padding: 4px; font-size: 9px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
             border-left: 2px solid var(--accent); display: flex; flex-direction: column; justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.15s ease;
         }
+        .bumpix-booking-card:hover { border-color: var(--accent); }
         .bumpix-card-actions { display: flex; gap: 2px; margin-top: 4px; }
 
         .modal {
@@ -189,6 +203,11 @@
         .service-category-title { background: rgba(255,255,255,0.03); padding: 6px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--border-color); }
         .service-items-box { padding: 6px 10px; }
         .bumpix-service-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(38, 45, 61, 0.5); font-size: 12px; gap: 8px; }
+        
+        .contact-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -197,7 +216,10 @@
     <header>
         <h1>WrapStudio</h1>
         <div class="header-actions">
-            <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="openServicesModal()">⚙ Услуги</button>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="openServicesModal()">⚙ Услуги</button>
+                <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px;" onclick="openContactsModal()">📖 Контакты</button>
+            </div>
             <div class="nav-controls">
                 <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="changeWeek(-1)">←</button>
                 <span id="weekRangeLabel" class="nav-label">Загрузка...</span>
@@ -221,11 +243,10 @@
         <h3 id="modalTitle" style="margin-top:0; font-size: 16px; font-weight: 700; margin-bottom: 14px;">Новая запись</h3>
         <form id="bookingForm">
             <input type="hidden" id="editId">
-            <input type="hidden" id="targetDate">
             
             <div style="display: flex; gap: 8px;">
                 <div class="form-group" style="flex:1;">
-                    <label>Дата</label>
+                    <label>Дата (перенос)</label>
                     <input type="date" id="formDate" required>
                 </div>
                 <div class="form-group" style="flex:1;">
@@ -246,7 +267,7 @@
             </div>
 
             <div class="form-group">
-                <label>Услуги:</label>
+                <label>Услуги (можно выбрать несколько):</label>
                 <div id="servicesCheckboxesContainer" style="max-height: 150px; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px;"></div>
             </div>
 
@@ -295,6 +316,20 @@
         <div id="bumpixCategoriesList" style="margin-bottom: 10px; max-height: 280px; overflow-y: auto;"></div>
         <div style="text-align: right;">
             <button type="button" class="btn btn-secondary" style="padding: 8px 12px; width: 100%;" onclick="closeModal('servicesModal')">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно контактной книги -->
+<div id="contactsModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin:0; font-size: 16px; font-weight: 700;">Книга контактов</h3>
+            <span style="font-size: 11px; color: var(--text-muted);" id="contactsCount">0 клиентов</span>
+        </div>
+        <div id="contactsListContainer" style="margin-bottom: 10px; max-height: 300px; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px;"></div>
+        <div>
+            <button type="button" class="btn btn-secondary" style="padding: 8px 12px; width: 100%;" onclick="closeModal('contactsModal')">Закрыть</button>
         </div>
     </div>
 </div>
@@ -350,6 +385,7 @@
 
     let services = JSON.parse(localStorage.getItem('wrap_services')) || defaultServices;
     let bookings = {}; 
+    let allBookingsList = []; // для контактов и быстрого доступа
     let currentWeekDate = new Date();
 
     const categories = ["Тонировка", "Атермалка", "Хамелеон", "Бронь"];
@@ -384,11 +420,13 @@
         }
 
         bookings = {};
+        allBookingsList = data || [];
         if (data) {
             data.forEach(item => {
                 if (!bookings[item.date]) bookings[item.date] = [];
                 bookings[item.date].push({
                     id: item.id,
+                    date: item.date,
                     time: item.time,
                     timeRange: item.time_range,
                     durationNum: item.duration_num,
@@ -401,6 +439,20 @@
         }
 
         renderBumpixWeekCalendar();
+    }
+
+    // Проверка находится ли машина в работе прямо сейчас
+    function checkCarInProgress(bookingDate, timeStr, durationNum) {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        if (bookingDate !== todayStr) return false;
+        
+        const [h, m] = timeStr.split(':').map(Number);
+        const startMinutes = h * 60 + m;
+        const endMinutes = startMinutes + (durationNum || 2) * 60;
+        
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
     }
 
     function checkDayHalves(dayBookings) {
@@ -464,18 +516,21 @@
                     let dayBookings = bookings[dateStr] || [];
                     dayBookings.forEach((b) => {
                         if (b.time === hour) {
-                            let servicesStr = b.services ? b.services.join(', ') : '';
                             let durationHours = b.durationNum || 2;
                             let cardHeight = (durationHours * 60) - 4;
+                            let isInProgress = checkCarInProgress(dateStr, b.time, durationHours);
                             
                             bodyHtml += `
-                                <div class="bumpix-booking-card" style="height: ${cardHeight}px; z-index: ${Math.round(durationHours * 10)};" onclick="event.stopPropagation()">
+                                <div class="bumpix-booking-card ${isInProgress ? 'in-progress' : ''}" style="height: ${cardHeight}px; z-index: ${Math.round(durationHours * 10)};" onclick="openEditModal('${b.id}')">
                                     <div>
-                                        <div style="font-weight:700; color:var(--accent); font-size:8px;">${b.timeRange || b.time}</div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span style="font-weight:700; color:var(--accent); font-size:8px;">${b.timeRange || b.time}</span>
+                                            <span class="status-dot ${isInProgress ? 'active' : ''}" title="${isInProgress ? 'Машина в работе' : 'Ожидание'}"></span>
+                                        </div>
                                         <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.name}</div>
                                         <div style="color:var(--text-muted); font-size:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.car}</div>
                                     </div>
-                                    <div class="bumpix-card-actions">
+                                    <div class="bumpix-card-actions" onclick="event.stopPropagation()">
                                         <button class="btn-edit" onclick="openEditModal('${b.id}')">Изм</button>
                                         <button class="btn-danger" onclick="deleteBooking('${b.id}')">Уд</button>
                                     </div>
@@ -561,7 +616,7 @@
     }
 
     function openEditModal(id) {
-        document.getElementById('modalTitle').innerText = 'Редактировать';
+        document.getElementById('modalTitle').innerText = 'Редактировать / Перенести';
         let foundBooking = null;
         for (let date in bookings) {
             let match = bookings[date].find(b => b.id === id);
@@ -570,7 +625,7 @@
         if (!foundBooking) return;
 
         document.getElementById('editId').value = foundBooking.id;
-        document.getElementById('formDate').value = Object.keys(bookings).find(d => bookings[d].some(b => b.id === id));
+        document.getElementById('formDate').value = foundBooking.date;
         document.getElementById('formTime').value = foundBooking.time;
         document.getElementById('formName').value = foundBooking.name;
         document.getElementById('formPhone').value = foundBooking.phone;
@@ -583,10 +638,58 @@
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+    // Управление контактной книгой
+    async function openContactsModal() {
+        const container = document.getElementById('contactsListContainer');
+        container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Загрузка контактов...</div>';
+        openModal('contactsModal');
+
+        // Получаем все уникальные контакты из базы
+        const { data, error } = await supabaseClient
+            .from('bookings')
+            .select('client_name, phone, car, date')
+            .order('date', { ascending: false });
+
+        if (error) {
+            container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--danger);">Ошибка загрузки</div>';
+            return;
+        }
+
+        // Фильтруем уникальных клиентов по номеру телефона
+        let uniqueMap = new Map();
+        (data || []).forEach(item => {
+            if (item.phone && !uniqueMap.has(item.phone)) {
+                uniqueMap.set(item.phone, item);
+            }
+        });
+
+        document.getElementById('contactsCount').innerText = `${uniqueMap.size} клиентов`;
+        container.innerHTML = '';
+
+        if (uniqueMap.size === 0) {
+            container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Контактов пока нет</div>';
+            return;
+        }
+
+        uniqueMap.forEach((client) => {
+            container.innerHTML += `
+                <div class="contact-item">
+                    <div>
+                        <strong>${client.client_name}</strong><br>
+                        <span style="color: var(--text-muted); font-size: 10px;">🚗 ${client.car || 'Не указано'}</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <a href="tel:${client.phone}" class="btn-edit" style="text-decoration: none; padding: 6px 8px;">📞 ${client.phone}</a>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
     document.getElementById('bookingForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const checkboxes = document.querySelectorAll('input[name="bookingService"]:checked');
-        if (checkboxes.length === 0) { alert('Выберите услугу.'); return; }
+        if (checkboxes.length === 0) { alert('Выберите хотя бы одну услугу.'); return; }
 
         let sNames = [];
         let totalDuration = 0;
@@ -595,7 +698,7 @@
             totalDuration += parseFloat(cb.getAttribute('data-duration')) || 2;
         });
 
-        let dateStr = document.getElementById('formDate',).value;
+        let dateStr = document.getElementById('formDate').value;
         let timeStr = document.getElementById('formTime').value;
         let [h, m] = timeStr.split(':').map(Number);
         let endM = h * 60 + m + totalDuration * 60;
@@ -627,7 +730,7 @@
     });
 
     async function deleteBooking(id) {
-        if (confirm('Удалить?')) {
+        if (confirm('Удалить эту запись?')) {
             let { error } = await supabaseClient.from('bookings').delete().eq('id', id);
             if (error) { alert('Ошибка: ' + error.message); return; }
             fetchBookings();
@@ -649,7 +752,7 @@
                 let idx = services.indexOf(s);
                 itemsBox.innerHTML += `
                     <div class="bumpix-service-item">
-                        <div><strong>${s.name}</strong><br><span style="font-size:10px; color:var(--text-muted);">${s.price.toLocaleString()} ₽</span></div>
+                        <div><strong>${s.name}</strong><br><span style="font-size:10px; color:var(--text-muted);">${s.price.toLocaleString()} ₽ (${s.durationNum || 2} ч.)</span></div>
                         <button class="btn-danger" onclick="deleteService(${idx})">Уд.</button>
                     </div>`;
             });
